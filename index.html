@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Smart Home IoT</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    .device { display: inline-block; margin: 20px; }
+    button { margin: 5px; padding: 10px 15px; }
+    img.icon { width: 80px; height: 80px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Sistem Smart Home IoT</h1>
+  <p>Status koneksi: <b id="status">Terputus</b></p>
+
+  <p>Suhu: <span id="suhu">-</span> °C</p>
+  <p>Kelembapan: <span id="kelembaban">-</span> %</p>
+
+  <!-- Smart Lamp -->
+  <h3>Smart Lamp</h3>
+  <div id="lamps">
+    <div class="device">
+      <p>Lampu 1</p>
+      <button onclick="kirimLamp(1,'nyala')">On</button>
+      <button onclick="kirimLamp(1,'mati')">Off</button><br>
+      <img id="lamp1" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp1">
+    </div>
+    <div class="device">
+      <p>Lampu 2</p>
+      <button onclick="kirimLamp(2,'nyala')">On</button>
+      <button onclick="kirimLamp(2,'mati')">Off</button><br>
+      <img id="lamp2" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp2">
+    </div>
+    <div class="device">
+      <p>Lampu 3</p>
+      <button onclick="kirimLamp(3,'nyala')">On</button>
+      <button onclick="kirimLamp(3,'mati')">Off</button><br>
+      <img id="lamp3" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp3">
+    </div>
+    <div class="device">
+      <p>Lampu 4</p>
+      <button onclick="kirimLamp(4,'nyala')">On</button>
+      <button onclick="kirimLamp(4,'mati')">Off</button><br>
+      <img id="lamp4" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp4">
+    </div>
+  </div>
+
+  <!-- Smart Door Lock -->
+  <h3>Smart Door Lock</h3>
+  <div class="device">
+    <button onclick="kirimDoor('buka')">Buka Pintu</button>
+    <button onclick="kirimDoor('tutup')">Tutup Pintu</button><br>
+    <img id="door" class="icon" src="https://cdn-icons-png.flaticon.com/512/61/61457.png" alt="door">
+    <p id="doorStatus">Tertutup</p>
+  </div>
+
+  <!-- Smart Fan -->
+  <h3>Smart Fan</h3>
+  <div class="device">
+    <button onclick="kirimFan('nyala')">On</button>
+    <button onclick="kirimFan('mati')">Off</button><br>
+    <img id="fan" class="icon" src="./MQTT - Web Asset/fan.png" alt="fan">
+  </div>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    const clientId = "smarthome-web-" + Math.random();
+    const host = "wss://neraaa.cloud.shiftr.io:443";
+
+    const options = {
+      keepalive: 60,
+      username: "neraaa",
+      password: "neraaa",
+      clientId: clientId,
+      clean: true,
+      reconnectPeriod: 1000,
+    };
+
+    const client = mqtt.connect(host, options);
+
+    const statusEl = document.getElementById("status");
+    const suhuEl = document.getElementById("suhu");
+    const lembabEl = document.getElementById("kelembaban");
+
+    client.on("connect", () => {
+      statusEl.textContent = "Terhubung";
+      client.subscribe("neraa-home/#");
+    });
+
+    client.on("message", (topic, msg) => {
+      const data = msg.toString();
+
+      if (topic === "neraa-home/sensor") {
+        const [suhu, lembab] = data.split(",");
+        suhuEl.textContent = suhu;
+        lembabEl.textContent = lembab;
+      }
+
+      if (topic.startsWith("neraa-home/lamp/status/")) {
+        const lampId = topic.split("/")[3];
+        const el = document.getElementById("lamp" + lampId);
+        if (data === "nyala") {
+          el.src = "led-on.png";
+        } else {
+          el.src = "led-off.png";
+        }
+      }
+
+      if (topic === "neraa-home/door/status") {
+        const el = document.getElementById("door");
+        const st = document.getElementById("doorStatus");
+        if (data === "buka") {
+          el.src = "https://cdn-icons-png.flaticon.com/512/61/61457.png";
+          st.textContent = "Terbuka";
+        } else {
+          el.src = "https://cdn-icons-png.flaticon.com/512/61/61457.png";
+          st.textContent = "Tertutup";
+        }
+      }
+
+      if (topic === "neraa-home/fan/status") {
+        const el = document.getElementById("fan");
+        if (data === "nyala") {
+          el.style.filter = "drop-shadow(0 0 10px lightblue)";
+        } else {
+          el.style.filter = "none";
+        }
+      }
+    });
+
+    function kirimLamp(id, perintah) {
+      client.publish("neraa-home/lamp/" + id, perintah);
+    }
+
+    function kirimDoor(perintah) {
+      client.publish("neraa-home/door", perintah);
+    }
+
+    function kirimFan(perintah) {
+      client.publish("neraa-home/fan", perintah);
+    }
+  </script>
+</body>
+</html>
