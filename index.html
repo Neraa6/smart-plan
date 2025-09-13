@@ -15,6 +15,7 @@
   <h1>Sistem Smart Home IoT</h1>
   <p>Status koneksi: <b id="status">Terputus</b></p>
 
+  <h3>Sensor</h3>
   <p>Suhu: <span id="suhu">-</span> °C</p>
   <p>Kelembapan: <span id="kelembaban">-</span> %</p>
 
@@ -25,25 +26,25 @@
       <p>Lampu 1</p>
       <button onclick="kirimLamp(1,'nyala')">On</button>
       <button onclick="kirimLamp(1,'mati')">Off</button><br>
-      <img id="lamp1" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp1">
+      <img id="lamp1" class="icon" src="led-off.png" alt="lamp1">
     </div>
     <div class="device">
       <p>Lampu 2</p>
       <button onclick="kirimLamp(2,'nyala')">On</button>
       <button onclick="kirimLamp(2,'mati')">Off</button><br>
-      <img id="lamp2" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp2">
+      <img id="lamp2" class="icon" src="led-off.png" alt="lamp2">
     </div>
     <div class="device">
       <p>Lampu 3</p>
       <button onclick="kirimLamp(3,'nyala')">On</button>
       <button onclick="kirimLamp(3,'mati')">Off</button><br>
-      <img id="lamp3" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp3">
+      <img id="lamp3" class="icon" src="led-off.png" alt="lamp3">
     </div>
     <div class="device">
       <p>Lampu 4</p>
       <button onclick="kirimLamp(4,'nyala')">On</button>
       <button onclick="kirimLamp(4,'mati')">Off</button><br>
-      <img id="lamp4" class="icon" src="./MQTT - Web Asset/led-off.png" alt="lamp4">
+      <img id="lamp4" class="icon" src="led-off.png" alt="lamp4">
     </div>
   </div>
 
@@ -61,7 +62,7 @@
   <div class="device">
     <button onclick="kirimFan('nyala')">On</button>
     <button onclick="kirimFan('mati')">Off</button><br>
-    <img id="fan" class="icon" src="./MQTT - Web Asset/fan.png" alt="fan">
+    <img id="fan" class="icon" src="fan.png" alt="fan">
   </div>
 
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -92,22 +93,23 @@
     client.on("message", (topic, msg) => {
       const data = msg.toString();
 
+      // Sensor suhu & kelembapan
       if (topic === "neraa-home/sensor") {
         const [suhu, lembab] = data.split(",");
         suhuEl.textContent = suhu;
         lembabEl.textContent = lembab;
       }
 
+      // Lamp status
       if (topic.startsWith("neraa-home/lamp/status/")) {
         const lampId = topic.split("/")[3];
         const el = document.getElementById("lamp" + lampId);
-        if (data === "nyala") {
-          el.src = "led-on.png";
-        } else {
-          el.src = "led-off.png";
+        if (el) {
+          el.src = (data === "nyala") ? "led-on.png" : "led-off.png";
         }
       }
 
+      // Door status
       if (topic === "neraa-home/door/status") {
         const el = document.getElementById("door");
         const st = document.getElementById("doorStatus");
@@ -120,6 +122,7 @@
         }
       }
 
+      // Fan status
       if (topic === "neraa-home/fan/status") {
         const el = document.getElementById("fan");
         if (data === "nyala") {
@@ -130,14 +133,13 @@
       }
     });
 
+    // Kirim perintah
     function kirimLamp(id, perintah) {
       client.publish("neraa-home/lamp/" + id, perintah);
     }
-
     function kirimDoor(perintah) {
       client.publish("neraa-home/door", perintah);
     }
-
     function kirimFan(perintah) {
       client.publish("neraa-home/fan", perintah);
     }
